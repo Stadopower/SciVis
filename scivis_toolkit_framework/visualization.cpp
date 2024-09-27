@@ -312,66 +312,56 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
     for(int i = 0; i < scalarValues.size(); i++){ //looping over the input to the function, a 1d vector with floats i think its a 3x3
         std::vector<std::vector<float>> tempVec = {{0,0,0},{0,0,0},{0,0,0}};
         // This is currently hardcoded to 64x64, TODO: Make it dependent on dimensions of the scalarValue
-        // Bottom Edge
+        // Bottom Row
         if(row==0){
             tempVec = {{scalarValues[i+63], scalarValues[i+64], scalarValues[i+65]},
                        {scalarValues[i-1], scalarValues[i], scalarValues[i+1]},
                        {scalarValues[4031+i], scalarValues[4032+i], scalarValues[4033+i]}};
-        }
-        // Top Edge
-        else if(row==63){
-            tempVec = {{scalarValues[i-4033],scalarValues[i-4032], scalarValues[i-4031]},
-                       {scalarValues[i-1],scalarValues[i],scalarValues[i+1]},
-                       {scalarValues[i-65],scalarValues[i-64],scalarValues[i-63]}};
-        }
-        // Left Edge
-        if(i%64==0){
-            if(row==0){ // bottom left pixle
+            if(i%64==0){//left edge bottom pixel
                 tempVec = {{scalarValues[127],scalarValues[64],scalarValues[65]},
                            {scalarValues[63],scalarValues[0],scalarValues[1]},
                            {scalarValues[4095],scalarValues[4032],scalarValues[4033]}};
-            }else if(row==63){ //Top left pixle
-                tempVec = {{scalarValues[63],scalarValues[0],scalarValues[1]},
-                           {scalarValues[4095],scalarValues[4032],scalarValues[4033]},
-                           {scalarValues[4031],scalarValues[3968],scalarValues[3969]}};
-            }else{
-                tempVec = {{scalarValues[i+127],scalarValues[i+64], scalarValues[i+65]},
-                           {scalarValues[i+63],scalarValues[i],scalarValues[i+1]},
-                           {scalarValues[i-1],scalarValues[i-64],scalarValues[i-63]}};
-            }
-        }
-
-        // Right Edge
-        else if(i%64==63){
-            if(row==0){ // bottom right
-                tempVec = {{scalarValues[126],scalarValues[127], scalarValues[64]},
-                           {scalarValues[62],scalarValues[63],scalarValues[0]},
-                           {scalarValues[4094],scalarValues[4095],scalarValues[4032]}};
-            }else if(row==63){ //top right
+            }else if(i%64==63){//right edge bottom pixel
+            tempVec = {{scalarValues[126],scalarValues[127], scalarValues[64]},
+                               {scalarValues[62],scalarValues[63],scalarValues[0]},
+                               {scalarValues[4094],scalarValues[4095],scalarValues[4032]}};
+        }}else if(row==64){//top row
+            //tempVec = {{scalarValues[i-4033],scalarValues[i-4032], scalarValues[i-4031]},
+            //           {scalarValues[i-1],scalarValues[i],scalarValues[i+1]},
+            //           {scalarValues[i-65],scalarValues[i-64],scalarValues[i-63]}};
+            if(i%64==0){//left edge top pixel
+                tempVec = {{scalarValues[127],scalarValues[64],scalarValues[65]},
+                           {scalarValues[63],scalarValues[0],scalarValues[1]},
+                           {scalarValues[4095],scalarValues[4032],scalarValues[4033]}};
+            }else if(i%64==63){//right edge top pixel
                 tempVec = {{scalarValues[62],scalarValues[63], scalarValues[0]},
-                           {scalarValues[4094],scalarValues[4095],scalarValues[4032]},
-                           {scalarValues[4030],scalarValues[4031],scalarValues[3968]}};
-            }else{
-                tempVec = {{scalarValues[i+63],scalarValues[i+64], scalarValues[i+1]},
-                           {scalarValues[i-1],scalarValues[i],scalarValues[i-63]},
-                           {scalarValues[i-65],scalarValues[i-64],scalarValues[i-127]}};
+                               {scalarValues[4094],scalarValues[4095],scalarValues[4032]},
+                               {scalarValues[4030],scalarValues[4031],scalarValues[3968]}};
             }
-        }
-        // Base Case
-        else{
-            tempVec = {{scalarValues[i+63],scalarValues[i+64], scalarValues[i+65]},{scalarValues[i-1],scalarValues[i],scalarValues[i+1]}, {scalarValues[i-65],scalarValues[i-64],scalarValues[i-63]}};
+        }else if(i%64==0 && row != 0 && row != 63){//left edge
+            tempVec = {{scalarValues[i+127],scalarValues[i+64], scalarValues[i+65]},
+                        {scalarValues[i+63],scalarValues[i],scalarValues[i+1]},
+                        {scalarValues[i-1],scalarValues[i-64],scalarValues[i-63]}};
+        }else if(i%64==63 && row != 0 && row != 63){
+            tempVec = {{scalarValues[i+63],scalarValues[i+64], scalarValues[i+1]},
+                        {scalarValues[i-1],scalarValues[i],scalarValues[i-63]},
+                       {scalarValues[i-65],scalarValues[i-64],scalarValues[i-127]}};
+        }else{
+            tempVec = {{scalarValues[i+63],scalarValues[i+64], scalarValues[i+65]},
+                       {scalarValues[i-1],scalarValues[i],scalarValues[i+1]},
+                       {scalarValues[i-65],scalarValues[i-64],scalarValues[i-63]}};
         }
 
         for(int m=0; m<kx.size(); m++){
             for(int n=0; n<kx[m].size();n++){
                 scalarX[i] = scalarX[i] + mirror_kx[m][n]*tempVec[m][n];
                 scalarY[i] = scalarY[i] + mirror_ky[m][n]*tempVec[m][n];
-            }
+            }}
         if(i%64==63){
             row++;        // Tracking the row
         }
-        }
-        magnitudes[i] = sqrt(pow(scalarX[i],2)+pow(scalarY[i],2));  // To make it more efficient we could overwite the scalarX[i] because we wont use it anymore after doing it once
+        magnitudes[i] = sqrt(pow(scalarX[i],2)+pow(scalarY[i],2));
+        // To make it more efficient we could overwite the scalarX[i] because we wont use it anymore after doing it once
     }
     scalarValues = magnitudes;
 }
