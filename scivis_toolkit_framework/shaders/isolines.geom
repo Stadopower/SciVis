@@ -36,7 +36,7 @@ void main()
             break;
         case 2:    //0010
             gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
-            gl_Position = (gl_in[1].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
+            gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
             EndPrimitive();
             break;
         case 3:    //0011
@@ -118,12 +118,12 @@ void main()
             break;
         case 13:
             gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
-            gl_Position = (gl_in[1].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
+            gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
             EndPrimitive();
             break;
         case 14:
             gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
-            gl_Position = (gl_in[1].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
+            gl_Position = (gl_in[0].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
             EndPrimitive();
             break;
         default:
