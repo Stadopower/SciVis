@@ -276,9 +276,15 @@ void Visualization::applyGaussianBlur(std::vector<float> &scalarValues) const
 #include <vector>
 #include <cmath>
 
+#include <vector>
+#include <cmath>
+
+#include <vector>
+#include <cmath>
+
 void Visualization::applyGradients(std::vector<float> &scalarValues) const
 {
-    // Sobel kernels for x and y directions
+    // Sobel kernels
     std::vector<std::vector<int>> kx = {{1, 0, -1},
                                         {2, 0, -2},
                                         {1, 0, -1}};
@@ -287,65 +293,60 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
                                         {0, 0, 0},
                                         {-1, -2, -1}};
 
-    //for loop to mirror the convolution matrices
-    std::vector<std::vector<int>> mirror_kx = {{0,0,0},{0,0,0},{0,0,0}};
-    std::vector<std::vector<int>> mirror_ky = {{0,0,0},{0,0,0},{0,0,0}};
+    // Step 1: Mirror the kernels
+    std::vector<std::vector<int>> mirror_kx(3, std::vector<int>(3));
+    std::vector<std::vector<int>> mirror_ky(3, std::vector<int>(3));
 
-    for(int i=0; i<2; i++){
-        for(int j=0; j<2; j++){
-            mirror_kx[i][j] = kx[2-i][2-j];
-            mirror_ky[i][j] = ky[2-i][2-j];
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            mirror_kx[i][j] = kx[2 - i][2 - j];
+            mirror_ky[i][j] = ky[2 - i][2 - j];
         }
     }
 
-    std::vector<float> scalarX(scalarValues.size(), 0); // Gradient in x-direction
-    std::vector<float> scalarY(scalarValues.size(), 0); // Gradient in y-direction
-    std::vector<float> magnitudes(scalarValues.size(), 0); // Gradient magnitude
+    // Step 2: Initialize gradient and magnitude vectors
+    std::vector<float> scalarX(scalarValues.size(), 0);
+    std::vector<float> scalarY(scalarValues.size(), 0);
+    std::vector<float> magnitudes(scalarValues.size(), 0);
 
-    int size = 64;
+    int width = 64; // The width and height of the grid
+    int height = 64;
 
-    // Iteration over every pixel
-    for (int y = 0; y < size; ++y) {
-        for (int x = 0; x < size; ++x) {
-            float gradX = 0;
-            float gradY = 0;
+    // Step 3: Loop over each pixel in the 1D scalarValues array
+    for (int i = 0; i < scalarValues.size(); ++i) {
+        int x = i % width;        // Current column
+        int y = i / width;        // Current row
 
-            //convolution, we calculate the corresponding index of each element of a matrix placed on center value with coordinates x,y
-            for (int j = -1; j <= 1; ++j) {
-                for (int i = -1; i <= 1; ++i) {
-                    // indices
-                    int matrixX = x + i;
-                    int matrixY = y + j;
+        // Handle boundary conditions (wrap-around)
+        int x_left = (x == 0) ? width - 1 : x - 1;      // Left neighbor
+        int x_right = (x == width - 1) ? 0 : x + 1;     // Right neighbor
+        int y_top = (y == 0) ? height - 1 : y - 1;      // Top neighbor
+        int y_bottom = (y == height - 1) ? 0 : y + 1;   // Bottom neighbor
 
-                    // wrap around the edges of the 64x64 grid we created
-                    if (matrixX < 0) {
-                        matrixX = size - 1; // go to right column
-                    } else if (matrixX >= size) {
-                        matrixX = 0; // go to left column
-                    }
-                    if (matrixY < 0) {
-                        matrixY = size - 1; //go to top row
-                    } else if (matrixY >= size) {
-                        matrixY = 0; //go to bottom row
-                    }
-                    // compute index in the total scalarvalues array
-                    //y gives us the row we are in, we multiply that by 64 to find the first index on that row
-                    int ind = matrixY * size + matrixX;
+        // Build the 3x3 neighborhood with wrap-around
+        std::vector<std::vector<float>> tempVec = {
+            {scalarValues[y_top * width + x_left], scalarValues[y_top * width + x], scalarValues[y_top * width + x_right]},
+            {scalarValues[y * width + x_left], scalarValues[i], scalarValues[y * width + x_right]},
+            {scalarValues[y_bottom * width + x_left], scalarValues[y_bottom * width + x], scalarValues[y_bottom * width + x_right]}
+        };
 
-                    // Accumulate gradient values using mirrored Sobel kernels
-                    //matrix indices [y,x] since y indicates row and x column; the +1 converts the i,j in matrix coordinates of the Sobel kernels
-                    gradX += kx[j + 1][i + 1] * scalarValues[ind];
-                    gradY += ky[j + 1][i + 1] * scalarValues[ind];
-                }
+        // Step 4: Apply convolution with mirrored Sobel kernels
+        for (int m = 0; m < 3; ++m) {
+            for (int n = 0; n < 3; ++n) {
+                scalarX[i] += mirror_kx[m][n] * tempVec[m][n];  // Convolution for x-gradient
+                scalarY[i] += mirror_ky[m][n] * tempVec[m][n];  // Convolution for y-gradient
             }
-            int Index = y * size + x;
-            scalarX[Index] = gradX;
-            scalarY[Index] = gradY;
-            magnitudes[Index] = std::sqrt(pow(gradX,2) + pow(gradY,2));
         }
+
+        // Step 5: Compute gradient magnitude
+        magnitudes[i] = std::sqrt(scalarX[i] * scalarX[i] + scalarY[i] * scalarY[i]);
     }
+
+    // Step 6: Overwrite scalarValues with magnitudes for visualization
     scalarValues = magnitudes;
 }
+
+
 
 
 /* This function receives a *reference* to a std::vector<float>,
