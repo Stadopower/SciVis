@@ -270,28 +270,22 @@ void Visualization::applyGaussianBlur(std::vector<float> &scalarValues) const
     // (Use a C-style 2D array, a std::array of std::array's, or a std::vector of std::vectors)
 
 
-
-
     qDebug() << "Gaussian blur not implemented";
 }
 
+#include <vector>
+#include <cmath>
+
 void Visualization::applyGradients(std::vector<float> &scalarValues) const
 {
-    // Implement Gradient extraction here, applied on the values of the scalarValues container.
-    // First, define a 3x3 Sobel kernels (for x and y directions).
-    // (Use a C-style 2D array, a std::array of std::array's, or a std::vector of std::vectors)
-    // Convolve the values of the scalarValues container with the Sobel kernels
-    // Calculate the Gradient magnitude
-    // Calculate the Gradient direction
-    // Visualize the Gradient magnitude
+    // Sobel kernels for x and y directions
+    std::vector<std::vector<int>> kx = {{1, 0, -1},
+                                        {2, 0, -2},
+                                        {1, 0, -1}};
 
-    std::vector<std::vector<int>> kx = {{1,0,-1},
-                                        {2,0,-2},
-                                        {1,0,-1}};
-
-    std::vector<std::vector<int>> ky = {{1,2,1},
-                                        {0,0,0},
-                                        {-1,-2,-1}};
+    std::vector<std::vector<int>> ky = {{1, 2, 1},
+                                        {0, 0, 0},
+                                        {-1, -2, -1}};
 
     //for loop to mirror the convolution matrices
     std::vector<std::vector<int>> mirror_kx = {{0,0,0},{0,0,0},{0,0,0}};
@@ -304,67 +298,55 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
         }
     }
 
-    std::vector<float> scalarX(scalarValues.size(), 0); // Idk if it is better to store both values in one vector consisting of vectors or like this
-    std::vector<float> scalarY(scalarValues.size(), 0);
-    std::vector<float> magnitudes(scalarValues.size(), 0);
+    std::vector<float> scalarX(scalarValues.size(), 0); // Gradient in x-direction
+    std::vector<float> scalarY(scalarValues.size(), 0); // Gradient in y-direction
+    std::vector<float> magnitudes(scalarValues.size(), 0); // Gradient magnitude
 
-    int row = 0;        // goes from 0 to 63 (64 after the last run
-    for(int i = 0; i < scalarValues.size(); i++){ //looping over the input to the function, a 1d vector with floats i think its a 3x3
-        std::vector<std::vector<float>> tempVec = {{0,0,0},{0,0,0},{0,0,0}};
-        // This is currently hardcoded to 64x64, TODO: Make it dependent on dimensions of the scalarValue
-        // Bottom Row
-        if(row==0){
-            tempVec = {{scalarValues[i+63], scalarValues[i+64], scalarValues[i+65]},
-                       {scalarValues[i-1], scalarValues[i], scalarValues[i+1]},
-                       {scalarValues[4031+i], scalarValues[4032+i], scalarValues[4033+i]}};
-            if(i%64==0){//left edge bottom pixel
-                tempVec = {{scalarValues[127],scalarValues[64],scalarValues[65]},
-                           {scalarValues[63],scalarValues[0],scalarValues[1]},
-                           {scalarValues[4095],scalarValues[4032],scalarValues[4033]}};
-            }else if(i%64==63){//right edge bottom pixel
-            tempVec = {{scalarValues[126],scalarValues[127], scalarValues[64]},
-                               {scalarValues[62],scalarValues[63],scalarValues[0]},
-                               {scalarValues[4094],scalarValues[4095],scalarValues[4032]}};
-        }}else if(row==64){//top row
-            //tempVec = {{scalarValues[i-4033],scalarValues[i-4032], scalarValues[i-4031]},
-            //           {scalarValues[i-1],scalarValues[i],scalarValues[i+1]},
-            //           {scalarValues[i-65],scalarValues[i-64],scalarValues[i-63]}};
-            if(i%64==0){//left edge top pixel
-                tempVec = {{scalarValues[127],scalarValues[64],scalarValues[65]},
-                           {scalarValues[63],scalarValues[0],scalarValues[1]},
-                           {scalarValues[4095],scalarValues[4032],scalarValues[4033]}};
-            }else if(i%64==63){//right edge top pixel
-                tempVec = {{scalarValues[62],scalarValues[63], scalarValues[0]},
-                               {scalarValues[4094],scalarValues[4095],scalarValues[4032]},
-                               {scalarValues[4030],scalarValues[4031],scalarValues[3968]}};
+    int size = 64;
+
+    // Iteration over every pixel
+    for (int y = 0; y < size; ++y) {
+        for (int x = 0; x < size; ++x) {
+            float gradX = 0;
+            float gradY = 0;
+
+            //convolution, we calculate the corresponding index of each element of a matrix placed on center value with coordinates x,y
+            for (int j = -1; j <= 1; ++j) {
+                for (int i = -1; i <= 1; ++i) {
+                    // indices
+                    int matrixX = x + i;
+                    int matrixY = y + j;
+
+                    // wrap around the edges of the 64x64 grid we created
+                    if (matrixX < 0) {
+                        matrixX = size - 1; // go to right column
+                    } else if (matrixX >= size) {
+                        matrixX = 0; // go to left column
+                    }
+                    if (matrixY < 0) {
+                        matrixY = size - 1; //go to top row
+                    } else if (matrixY >= size) {
+                        matrixY = 0; //go to bottom row
+                    }
+                    // compute index in the total scalarvalues array
+                    //y gives us the row we are in, we multiply that by 64 to find the first index on that row
+                    int ind = matrixY * size + matrixX;
+
+                    // Accumulate gradient values using mirrored Sobel kernels
+                    //matrix indices [y,x] since y indicates row and x column; the +1 converts the i,j in matrix coordinates of the Sobel kernels
+                    gradX += kx[j + 1][i + 1] * scalarValues[ind];
+                    gradY += ky[j + 1][i + 1] * scalarValues[ind];
+                }
             }
-        }else if(i%64==0 && row != 0 && row != 63){//left edge
-            tempVec = {{scalarValues[i+127],scalarValues[i+64], scalarValues[i+65]},
-                        {scalarValues[i+63],scalarValues[i],scalarValues[i+1]},
-                        {scalarValues[i-1],scalarValues[i-64],scalarValues[i-63]}};
-        }else if(i%64==63 && row != 0 && row != 63){
-            tempVec = {{scalarValues[i+63],scalarValues[i+64], scalarValues[i+1]},
-                        {scalarValues[i-1],scalarValues[i],scalarValues[i-63]},
-                       {scalarValues[i-65],scalarValues[i-64],scalarValues[i-127]}};
-        }else{
-            tempVec = {{scalarValues[i+63],scalarValues[i+64], scalarValues[i+65]},
-                       {scalarValues[i-1],scalarValues[i],scalarValues[i+1]},
-                       {scalarValues[i-65],scalarValues[i-64],scalarValues[i-63]}};
+            int Index = y * size + x;
+            scalarX[Index] = gradX;
+            scalarY[Index] = gradY;
+            magnitudes[Index] = std::sqrt(pow(gradX,2) + pow(gradY,2));
         }
-
-        for(int m=0; m<kx.size(); m++){
-            for(int n=0; n<kx[m].size();n++){
-                scalarX[i] = scalarX[i] + mirror_kx[m][n]*tempVec[m][n];
-                scalarY[i] = scalarY[i] + mirror_ky[m][n]*tempVec[m][n];
-            }}
-        if(i%64==63){
-            row++;        // Tracking the row
-        }
-        magnitudes[i] = sqrt(pow(scalarX[i],2)+pow(scalarY[i],2));
-        // To make it more efficient we could overwite the scalarX[i] because we wont use it anymore after doing it once
     }
     scalarValues = magnitudes;
 }
+
 
 /* This function receives a *reference* to a std::vector<float>,
  * which acts as a pointer. Modifying scalarValues here will result
