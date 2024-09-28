@@ -309,40 +309,35 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
     std::vector<float> scalarY(scalarValues.size(), 0);
     std::vector<float> magnitudes(scalarValues.size(), 0);
 
-    int width = 64; // The width and height of the grid
-    int height = 64;
+    int size = 64; // size of the grid
 
-    // Step 3: Loop over each pixel in the 1D scalarValues array
+
+    // loop over each pixel
     for (int i = 0; i < scalarValues.size(); ++i) {
-        int x = i % width;        // Current column
-        int y = i / width;        // Current row
+        int x = i % size;        // column
+        int y = i / size;        // row
 
-        // Handle boundary conditions (wrap-around)
-        int x_left = (x == 0) ? width - 1 : x - 1;      // Left neighbor
-        int x_right = (x == width - 1) ? 0 : x + 1;     // Right neighbor
-        int y_top = (y == 0) ? height - 1 : y - 1;      // Top neighbor
-        int y_bottom = (y == height - 1) ? 0 : y + 1;   // Bottom neighbor
+        // this handles boundary conditions in case we have to wrap around
+        int x_left = (x == 0) ? size - 1 : x - 1;
+        int x_right = (x == size - 1) ? 0 : x + 1;
+        int y_top = (y == 0) ? size - 1 : y - 1;
+        int y_bottom = (y == size - 1) ? 0 : y + 1;
 
-        // Build the 3x3 neighborhood with wrap-around
         std::vector<std::vector<float>> tempVec = {
-            {scalarValues[y_top * width + x_left], scalarValues[y_top * width + x], scalarValues[y_top * width + x_right]},
-            {scalarValues[y * width + x_left], scalarValues[i], scalarValues[y * width + x_right]},
-            {scalarValues[y_bottom * width + x_left], scalarValues[y_bottom * width + x], scalarValues[y_bottom * width + x_right]}
+            {scalarValues[y_top * size + x_left], scalarValues[y_top * size + x], scalarValues[y_top * size + x_right]},
+            {scalarValues[y * size + x_left], scalarValues[i], scalarValues[y * size + x_right]},
+            {scalarValues[y_bottom * size + x_left], scalarValues[y_bottom * size + x], scalarValues[y_bottom * size + x_right]}
         };
 
-        // Step 4: Apply convolution with mirrored Sobel kernels
+        // apply convolution
         for (int m = 0; m < 3; ++m) {
             for (int n = 0; n < 3; ++n) {
                 scalarX[i] += mirror_kx[m][n] * tempVec[m][n];  // Convolution for x-gradient
                 scalarY[i] += mirror_ky[m][n] * tempVec[m][n];  // Convolution for y-gradient
             }
         }
-
-        // Step 5: Compute gradient magnitude
-        magnitudes[i] = std::sqrt(scalarX[i] * scalarX[i] + scalarY[i] * scalarY[i]);
+        magnitudes[i] = std::sqrt(pow(scalarX[i],2) + pow(scalarY[i],2));
     }
-
-    // Step 6: Overwrite scalarValues with magnitudes for visualization
     scalarValues = magnitudes;
 }
 
