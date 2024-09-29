@@ -149,8 +149,7 @@ float opacityCorrection(float alpha, float samplingRatio)
 }
 
 // Choose technique
-// TODO: set technique
-const int technique = 0; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
+const int technique = 2; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
 
 
 /**
@@ -165,8 +164,10 @@ void accumulation(float value, float opacityCorrectionFactor, inout vec4 compose
     vec4 color = transferFunction(value);
     color.a = opacityCorrection(color.a, opacityCorrectionFactor);
 
-    // TODO: Implement Front-to-back blending
-    composedColor = vec4(0.5F) * value; // placeholder
+    //composedColor = vec4(0.5F) * value; // placeholder
+    //re-written function for color compositing from lecture with the variables of this file
+    composedColor.rgb = composedColor.rgb + (1.0 - composedColor.a) * color.rgb * color.a;
+    composedColor.a = composedColor.a + (1.0 - composedColor.a) * color.a;
 }
 
 /**
@@ -177,7 +178,7 @@ void accumulation(float value, float opacityCorrectionFactor, inout vec4 compose
  */
 void maximumIntensity(float value, inout float maxIntense)
 {
-    // TODO: Record maximum intensity along the ray.
+    maxIntense = max(maxIntense, value);
 }
 
 /**
@@ -189,7 +190,8 @@ void maximumIntensity(float value, inout float maxIntense)
  */
 void sumIntensity(float value, inout float sumIntense, inout int hitCount)
 {
-    // TODO: sum up the intensity along the ray.
+    sumIntense += value;
+    hitCount += 1;
 }
 
 /**
@@ -277,22 +279,27 @@ void mainImage(out vec4 fragColor)
     }
 
 
-    // TODO: Determine final color:
+    //Determine final color:
     if (technique == 0)
-    {
-        // TODO: color for accumulation
+    {   //we linearly interpolate the background and final color reached by the value of the final color
+        fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
+        fragColor.a = 1; //start with a standard opacity of 1
     }
     else if (technique == 1)
     {
-        // TODO: color for max. intensity projection
+        fragColor = transferFunction(maxIntense);
+        fragColor.a = 1.0;
     }
     else if (technique == 2)
-    {
-        // TODO: color for average intensity
+        {
+        if(hitCount == 0){
+            fragColor = background;
+        }else{
+            float average = sumIntense / float(hitCount);
+            fragColor = transferFunction(average);
+        }
+        fragColor.a = 1;
     }
-
-    fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
-    fragColor.a = 1.0F;
 }
 
 void main()
