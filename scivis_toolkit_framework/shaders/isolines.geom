@@ -67,8 +67,6 @@ if(useInterpolation==false){
                     gl_Position = (gl_in[2].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
                     EndPrimitive();
                 }
-            }else{  // Asymtotic Decider
-
             }
             break;
         case 6:    //0110
@@ -92,21 +90,24 @@ if(useInterpolation==false){
             EndPrimitive();
             break;
         case 10:
-            if((gs_in[0].value + gs_in[1].value + gs_in[2].value + gs_in[3].value)/4 < rho){    // Middle point is not in the isoline
-                gl_Position = (gl_in[0].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
-                gl_Position = (gl_in[2].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
-                EndPrimitive();
-                gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
-                gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
-                EndPrimitive();
-            }else{
-                gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
-                gl_Position = (gl_in[0].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
-                EndPrimitive();
-                gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
-                gl_Position = (gl_in[2].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
-                EndPrimitive();
-            }
+            if (ambiguousCaseMidpoint){
+                if((gs_in[0].value + gs_in[1].value + gs_in[2].value + gs_in[3].value)/4 < rho){    // Middle point is not in the isoline
+                    gl_Position = (gl_in[0].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
+                    gl_Position = (gl_in[2].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
+                    EndPrimitive();
+                    gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
+                    gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
+                    EndPrimitive();
+                }else{
+                    gl_Position = (gl_in[0].gl_Position + gl_in[1].gl_Position)/2; EmitVertex();
+                    gl_Position = (gl_in[0].gl_Position + gl_in[2].gl_Position)/2; EmitVertex();
+                    EndPrimitive();
+                    gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
+                    gl_Position = (gl_in[2].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
+                    EndPrimitive();
+                    }
+                }
+            break;
         case 11:
             gl_Position = (gl_in[1].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
             gl_Position = (gl_in[2].gl_Position + gl_in[3].gl_Position)/2; EmitVertex();
@@ -169,8 +170,27 @@ if(useInterpolation==false){
                         gl_Position = ((gs_in[2].value - rho) * gl_in[3].gl_Position + (rho - gs_in[3].value) * gl_in[2].gl_Position) / (gs_in[2].value - gs_in[3].value); EmitVertex();
                         EndPrimitive();
                     }
-                } else {    // Asymptotic Decider
-                    // Implement logic for the asymptotic decider
+                } else {  // Asymptotic Decider
+                float t02 = (rho - gs_in[0].value) / (gs_in[2].value - gs_in[0].value);
+                float t23 = (rho - gs_in[2].value) / (gs_in[3].value - gs_in[2].value);
+                float t01 = (rho - gs_in[0].value) / (gs_in[1].value - gs_in[0].value);
+                float t13 = (rho - gs_in[1].value) / (gs_in[3].value - gs_in[1].value);
+
+                if((gs_in[0].value + gs_in[1].value + gs_in[2].value + gs_in[3].value) / 4.0 < rho) {
+                    gl_Position = gl_in[0].gl_Position + t02 * (gl_in[2].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                    gl_Position = gl_in[2].gl_Position + t23 * (gl_in[3].gl_Position - gl_in[2].gl_Position); EmitVertex();
+                    EndPrimitive();
+                    gl_Position = gl_in[0].gl_Position + t01 * (gl_in[1].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                    gl_Position = gl_in[1].gl_Position + t13 * (gl_in[3].gl_Position - gl_in[1].gl_Position); EmitVertex();
+                    EndPrimitive();
+                } else {
+                    gl_Position = gl_in[0].gl_Position + t01 * (gl_in[1].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                    gl_Position = gl_in[0].gl_Position + t02 * (gl_in[2].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                    EndPrimitive();
+                    gl_Position = gl_in[1].gl_Position + t13 * (gl_in[3].gl_Position - gl_in[1].gl_Position); EmitVertex();
+                    gl_Position = gl_in[2].gl_Position + t23 * (gl_in[3].gl_Position - gl_in[2].gl_Position); EmitVertex();
+                    EndPrimitive();
+                    }
                 }
                 break;
             case 6:    //0110
@@ -194,22 +214,44 @@ if(useInterpolation==false){
                 EndPrimitive();
                 break;
             case 10:    //1010
-                if((gs_in[0].value + gs_in[1].value + gs_in[2].value + gs_in[3].value) / 4 < rho) {    // Middle point is not in the isoline
-                    gl_Position = ((gs_in[0].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[2].value); EmitVertex();
-                    gl_Position = ((gs_in[3].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[2].value); EmitVertex();
-                    EndPrimitive();
-                    gl_Position = ((gs_in[0].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[1].value); EmitVertex();
-                    gl_Position = ((gs_in[3].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[1].value); EmitVertex();
-                    EndPrimitive();
-                } else {
-                    gl_Position = ((gs_in[0].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[1].value); EmitVertex();
-                    gl_Position = ((gs_in[0].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[2].value); EmitVertex();
-                    EndPrimitive();
-                    gl_Position = ((gs_in[3].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[1].value); EmitVertex();
-                    gl_Position = ((gs_in[3].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[2].value); EmitVertex();
-                    EndPrimitive();
-                }
-                break; // This break is missing in your original code
+                if(ambiguousCaseMidpoint){
+                    if((gs_in[0].value + gs_in[1].value + gs_in[2].value + gs_in[3].value) / 4 < rho) {    // Middle point is not in the isoline
+                        gl_Position = ((gs_in[0].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[2].value); EmitVertex();
+                        gl_Position = ((gs_in[3].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[2].value); EmitVertex();
+                        EndPrimitive();
+                        gl_Position = ((gs_in[0].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[1].value); EmitVertex();
+                        gl_Position = ((gs_in[3].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[1].value); EmitVertex();
+                        EndPrimitive();
+                    } else {
+                        gl_Position = ((gs_in[0].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[1].value); EmitVertex();
+                        gl_Position = ((gs_in[0].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[0].gl_Position) / (gs_in[0].value - gs_in[2].value); EmitVertex();
+                        EndPrimitive();
+                        gl_Position = ((gs_in[3].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[1].value); EmitVertex();
+                        gl_Position = ((gs_in[3].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[2].value); EmitVertex();
+                        EndPrimitive();
+                    }}else{  // Asymptotic Decider
+                    float t02 = (rho - gs_in[0].value) / (gs_in[2].value - gs_in[0].value);
+                    float t23 = (rho - gs_in[2].value) / (gs_in[3].value - gs_in[2].value);
+                    float t01 = (rho - gs_in[0].value) / (gs_in[1].value - gs_in[0].value);
+                    float t13 = (rho - gs_in[1].value) / (gs_in[3].value - gs_in[1].value);
+
+                    if((gs_in[0].value + gs_in[1].value + gs_in[2].value + gs_in[3].value) / 4.0 < rho) {
+                        gl_Position = gl_in[0].gl_Position + t02 * (gl_in[2].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                        gl_Position = gl_in[2].gl_Position + t23 * (gl_in[3].gl_Position - gl_in[2].gl_Position); EmitVertex();
+                        EndPrimitive();
+                        gl_Position = gl_in[0].gl_Position + t01 * (gl_in[1].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                        gl_Position = gl_in[1].gl_Position + t13 * (gl_in[3].gl_Position - gl_in[1].gl_Position); EmitVertex();
+                        EndPrimitive();
+                    } else {
+                        gl_Position = gl_in[0].gl_Position + t01 * (gl_in[1].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                        gl_Position = gl_in[0].gl_Position + t02 * (gl_in[2].gl_Position - gl_in[0].gl_Position); EmitVertex();
+                        EndPrimitive();
+                        gl_Position = gl_in[1].gl_Position + t13 * (gl_in[3].gl_Position - gl_in[1].gl_Position); EmitVertex();
+                        gl_Position = gl_in[2].gl_Position + t23 * (gl_in[3].gl_Position - gl_in[2].gl_Position); EmitVertex();
+                        EndPrimitive();
+                        }
+                    }
+                break;
             case 11:    //1011
                 gl_Position = ((gs_in[3].value - rho) * gl_in[1].gl_Position + (rho - gs_in[1].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[1].value); EmitVertex();
                 gl_Position = ((gs_in[3].value - rho) * gl_in[2].gl_Position + (rho - gs_in[2].value) * gl_in[3].gl_Position) / (gs_in[3].value - gs_in[2].value); EmitVertex();
