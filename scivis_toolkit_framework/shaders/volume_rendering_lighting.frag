@@ -165,40 +165,47 @@ bool intersectBoundingBox(vec3 rayOrig, vec3 rayDir, out float tNear, out float 
  *	@param pos The postion from which the gradient should be determined
  *	@return The gradient at pos.
  */
+// Compute gradient using central differences
 vec3 gradientCentral(vec3 pos)
 {
     vec3 result;
-    //TODO: Insert code here
-    return result;
+    result.x = sampleVolume(pos + vec3(voxelWidth, 0.0F, 0.0F)) - sampleVolume(pos - vec3(voxelWidth, 0.0F, 0.0F));
+    result.y = sampleVolume(pos + vec3(0.0F, voxelWidth, 0.0F)) - sampleVolume(pos - vec3(0.0F, voxelWidth, 0.0F));
+    result.z = sampleVolume(pos + vec3(0.0F, 0.0F, voxelWidth)) - sampleVolume(pos - vec3(0.0F, 0.0F, voxelWidth));
+    return result / (2.0F * voxelWidth);
 }
 
-/**
- *	Returns the gradient at a given position using intermediate differences
- *
- *	@param pos The postion from which the gradient should be determined
- *	@return The gradient at pos.
- */
+// Compute gradient using intermediate differences
 vec3 gradientIntermediate(vec3 pos)
 {
     vec3 result;
-    //TODO: Insert code here
-    return result;
+    result.x = sampleVolume(pos + vec3(voxelWidth, 0.0F, 0.0F)) - sampleVolume(pos);
+    result.y = sampleVolume(pos + vec3(0.0F, voxelWidth, 0.0F)) - sampleVolume(pos);
+    result.z = sampleVolume(pos + vec3(0.0F, 0.0F, voxelWidth)) - sampleVolume(pos);
+    return result / voxelWidth;
 }
 
-/**
- *	Computes the color of the lit surface of an object, using a global
- *	directional light source.
- *
- *	@param diffuseColor The diffuse color of the object.
- *	@param normal The surface normal at the position that should be lit.
- *	@param eyeDir The direction from the surface to the camera position.
- *	@return The color of the lit surface
- */
+// Blinn-Phong shading model
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
-    // TODO Insert code here
-    vec4 color = diffuseColor;
-    return color;
+    vec3 lightDirection = normalize(lightDir);
+    vec3 halfVector = normalize(lightDirection + eyeDir);
+
+    // Ambient contribution
+    vec4 ambient = ka * diffuseColor;
+
+    // Diffuse contribution
+    float diffuseFactor = max(dot(normal, lightDirection), 0.0F);
+    vec4 diffuse = kd * diffuseFactor * diffuseColor * lightColor;
+
+    // Specular contribution
+    float specularFactor = pow(max(dot(normal, halfVector), 0.0F), exponent);
+    vec4 specular = ks * specularFactor * specularColor;
+
+    // Combine all the components
+    vec4 result = ambient + diffuse + specular;
+    result.a = diffuseColor.a; // Retain alpha from diffuse color
+    return result;
 }
 
 /**

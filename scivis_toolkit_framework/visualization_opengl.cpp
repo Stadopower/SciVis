@@ -204,7 +204,6 @@ void Visualization::opengl_setupIsolines()
 
     // Replace the placeholder code below with code that, for each quad in the grid, computes its
     // four indices and adds it to the indices vector.
-    int row = 0;
     for(int i=0; i<m_DIM*m_DIM-m_DIM; i++){ //We loop till the last row as this is also never an starting index
         if(i%m_DIM == m_DIM-1){ // Right edge is never the start of a new square
             continue;
@@ -213,7 +212,6 @@ void Visualization::opengl_setupIsolines()
         indices.push_back(i+1);
         indices.push_back(i+m_DIM);
         indices.push_back(i+m_DIM+1);
-        row++;
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_eboIsolines);
@@ -929,6 +927,7 @@ void Visualization::opengl_drawIsolines()
     }
 
     std::vector<Color> const colorMap = Texture::createTurboTexture(m_numberOfIsolines);
+
     for (size_t n = 0U; n < m_numberOfIsolines; ++n)
     {
         float const currentIsolineValue = m_isolineMinValue + (n * stepsize);
