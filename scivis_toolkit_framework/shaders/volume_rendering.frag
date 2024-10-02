@@ -114,24 +114,47 @@ bool intersectBoundingBox(vec3 rayOrig, vec3 rayDir, out float tNear, out float 
 
 vec3 gradientCentral(vec3 pos)
 {
-    // TODO: Insert code here
-
-    return vec3(1.0F, 0.0F, 0.0F); // placeholder value
+    vec3 final;
+    float width = voxelWidth;
+    //computes difference between position + voxelwidth and position - voxelwidth
+    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - sampleVolume(pos - vec3(width, 0, 0));
+    final[1] = sampleVolume(pos + vec3(0, width, 0)) - sampleVolume(pos - vec3(0, width, 0));
+    final[2] = sampleVolume(pos + vec3(0, 0, width)) - sampleVolume(pos - vec3(0, 0, width));
+    return final / width;
 }
 
 vec3 gradientIntermediate(vec3 pos)
 {
-    // TODO: Insert code here
-
-    return vec3(1.0F, 0.0F, 0.0F); // placeholder value
+    vec3 final;
+    float width = voxelWidth;
+    float Sample = sampleVolume(pos);
+    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - Sample;
+    final[1] = sampleVolume(pos + vec3(0, width, 0)) - Sample;
+    final[2] = sampleVolume(pos + vec3(0, 0, width)) - Sample;
+    return final / width;
 }
 
+//this is the part of the code that I do NOT understand
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
-    // TODO: Insert code here
+    vec3 N = normalize(normal);
+    vec3 L = normalize(lightDir);
+    vec3 H = normalize(L + eyeDir);
 
-    return vec4(0.5F, 0.5F, 0.5F, 1.0F); // placeholder value
+    vec4 ambient = ka * diffuseColor;
+
+    float diffuseFactor = max(dot(N, L), 0.0F);
+    vec4 diffuse = kd * diffuseFactor * diffuseColor * lightColor;
+
+    float specularFactor = pow(max(dot(N, H), 0.0F), exponent);
+    vec4 specular = ks * specularFactor * specularColor;
+
+    vec4 result = ambient + diffuse + specular;
+    result.a = diffuseColor.a;
+
+    return result;
 }
+
 
 // *** *** //
 
@@ -149,7 +172,7 @@ float opacityCorrection(float alpha, float samplingRatio)
 }
 
 // Choose technique
-const int technique = 2; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
+const int technique = 0; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
 
 
 /**
@@ -266,29 +289,41 @@ void mainImage(out vec4 fragColor)
         vec3 texCoord = pos + 0.5F;
         float value = sampleVolume(texCoord);
 
-        if (technique == 0)
+        if (technique == 0){
             accumulation(value, opacityCorrectionFactor, finalColor);
-        else if (technique == 1)
+        }else if (technique == 1){
             maximumIntensity(value, maxIntense);
-        else if (technique == 2)
+        }else if (technique == 2){
             sumIntensity(value, sumIntense, hitCount);
-        else
+        }else{
             accumulation(value, opacityCorrectionFactor, finalColor);
-
+        }
         t += rayStepSize;
-    }
 
+        // Compute gradient and apply lighting
+        #ifdef USE_INTERMEDIATE
+        vec3 grad = gradientIntermediate(pos);
+        #elif defined(USE_CENTRAL)
+        vec3 grad = gradientCentral(pos);
+        #endif
+        vec4 lightingColor = lighting(color, -normalize(grad), -rayDir);
+
+        //I cannot FOR THE LIFE OF ME figure out how to integrate lighting along the ray
+        //this is what I came put with so far but it makes the screen black for some reason
+
+        //finalColor.rgb *=  finalColor.a;
+        //finalColor.a += finalColor.a * lightingColor.a;
+    }
 
     //Determine final color:
     if (technique == 0)
     {   //we linearly interpolate the background and final color reached by the value of the final color
         fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
-        fragColor.a = 1; //start with a standard opacity of 1
+        fragColor.a = 1; //standard opacity of 1
     }
     else if (technique == 1)
     {
         fragColor = transferFunction(maxIntense);
-        fragColor.a = 1.0;
     }
     else if (technique == 2)
         {
@@ -298,8 +333,8 @@ void mainImage(out vec4 fragColor)
             float average = sumIntense / float(hitCount);
             fragColor = transferFunction(average);
         }
-        fragColor.a = 1;
     }
+    fragColor = fragColor * fragColor.a + (1.0F - fragColor.a) * background;
 }
 
 void main()

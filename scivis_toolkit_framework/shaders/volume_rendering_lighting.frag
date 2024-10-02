@@ -1,7 +1,7 @@
 #version 330 core
 // volume_rendering_lighting fragment shader
 
-// TODO If you want to change from central to intermediate differences, do it here by commenting/uncommenting the corresponding #define
+
 //#define USE_CENTRAL
 #define USE_INTERMEDIATE
 
@@ -168,43 +168,47 @@ bool intersectBoundingBox(vec3 rayOrig, vec3 rayDir, out float tNear, out float 
 // Compute gradient using central differences
 vec3 gradientCentral(vec3 pos)
 {
-    vec3 result;
-    result.x = sampleVolume(pos + vec3(voxelWidth, 0.0F, 0.0F)) - sampleVolume(pos - vec3(voxelWidth, 0.0F, 0.0F));
-    result.y = sampleVolume(pos + vec3(0.0F, voxelWidth, 0.0F)) - sampleVolume(pos - vec3(0.0F, voxelWidth, 0.0F));
-    result.z = sampleVolume(pos + vec3(0.0F, 0.0F, voxelWidth)) - sampleVolume(pos - vec3(0.0F, 0.0F, voxelWidth));
-    return result / (2.0F * voxelWidth);
+    vec3 final;
+    float width = voxelWidth;
+    //computes difference between position + voxelwidth and position - voxelwidth
+    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - sampleVolume(pos - vec3(width, 0, 0));
+    final[1] = sampleVolume(pos + vec3(0, width, 0)) - sampleVolume(pos - vec3(0, width, 0));
+    final[2] = sampleVolume(pos + vec3(0, 0, width)) - sampleVolume(pos - vec3(0, 0, width));
+    return final / width;
 }
 
 // Compute gradient using intermediate differences
 vec3 gradientIntermediate(vec3 pos)
 {
-    vec3 result;
-    result.x = sampleVolume(pos + vec3(voxelWidth, 0.0F, 0.0F)) - sampleVolume(pos);
-    result.y = sampleVolume(pos + vec3(0.0F, voxelWidth, 0.0F)) - sampleVolume(pos);
-    result.z = sampleVolume(pos + vec3(0.0F, 0.0F, voxelWidth)) - sampleVolume(pos);
-    return result / voxelWidth;
+    vec3 final;
+    float width = voxelWidth;
+    float Sample = sampleVolume(pos);
+    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - Sample;
+    final[1] = sampleVolume(pos + vec3(0, width, 0)) - Sample;
+    final[2] = sampleVolume(pos + vec3(0, 0, width)) - Sample;
+    return final / width;
 }
 
-// Blinn-Phong shading model
+// Blinn-Phong
+//FOR TIM, I have no idea how this works honestly, it looks like it does ( and it should) but don't ask me how
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
     vec3 lightDirection = normalize(lightDir);
     vec3 halfVector = normalize(lightDirection + eyeDir);
 
-    // Ambient contribution
+    // ambient
     vec4 ambient = ka * diffuseColor;
 
-    // Diffuse contribution
+    // diffuse
     float diffuseFactor = max(dot(normal, lightDirection), 0.0F);
     vec4 diffuse = kd * diffuseFactor * diffuseColor * lightColor;
 
-    // Specular contribution
+    // specular
     float specularFactor = pow(max(dot(normal, halfVector), 0.0F), exponent);
     vec4 specular = ks * specularFactor * specularColor;
 
-    // Combine all the components
     vec4 result = ambient + diffuse + specular;
-    result.a = diffuseColor.a; // Retain alpha from diffuse color
+    result.a = diffuseColor.a;
     return result;
 }
 
@@ -272,7 +276,7 @@ void mainImage(out vec4 fragColor)
         float sampleValue = sampleVolume(pos);
         vec4 color = transferFunction(sampleValue);
 
-
+        //this was already here aswell
         #ifdef USE_INTERMEDIATE
         vec3 grad = gradientIntermediate(pos);
         #else
@@ -289,7 +293,7 @@ void mainImage(out vec4 fragColor)
            finalGradient = grad;
         }
         color = lighting(color, -normalize(finalGradient), -rayDir);
-        // blending with pre-multiplied color!
+
         color.rgb *= color.a;
         finalColor += color * (1.0F - finalColor.w);
     }
