@@ -169,38 +169,36 @@ bool intersectBoundingBox(vec3 rayOrig, vec3 rayDir, out float tNear, out float 
 vec3 gradientCentral(vec3 pos)
 {
     vec3 final;
-    float width = voxelWidth;
     //computes difference between position + voxelwidth and position - voxelwidth
-    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - sampleVolume(pos - vec3(width, 0, 0));
-    final[1] = sampleVolume(pos + vec3(0, width, 0)) - sampleVolume(pos - vec3(0, width, 0));
-    final[2] = sampleVolume(pos + vec3(0, 0, width)) - sampleVolume(pos - vec3(0, 0, width));
-    return final / width;
+    final[0] = sampleVolume(pos + vec3(voxelWidth, 0, 0)) - sampleVolume(pos - vec3(voxelWidth, 0, 0));
+    final[1] = sampleVolume(pos + vec3(0, voxelWidth, 0)) - sampleVolume(pos - vec3(0, voxelWidth, 0));
+    final[2] = sampleVolume(pos + vec3(0, 0, voxelWidth)) - sampleVolume(pos - vec3(0, 0, voxelWidth));
+    return final / voxelWidth;
 }
 
 // Compute gradient using intermediate differences
 vec3 gradientIntermediate(vec3 pos)
 {
     vec3 final;
-    float width = voxelWidth;
     float Sample = sampleVolume(pos);
-    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - Sample;
-    final[1] = sampleVolume(pos + vec3(0, width, 0)) - Sample;
-    final[2] = sampleVolume(pos + vec3(0, 0, width)) - Sample;
-    return final / width;
+    final[0] = sampleVolume(pos + vec3(voxelWidth, 0, 0)) - Sample;
+    final[1] = sampleVolume(pos + vec3(0, voxelWidth, 0)) - Sample;
+    final[2] = sampleVolume(pos + vec3(0, 0, voxelWidth)) - Sample;
+    return final / voxelWidth;
 }
 
 // Blinn-Phong
 //FOR TIM, I have no idea how this works honestly, it looks like it does ( and it should) but don't ask me how
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
-    vec3 lightDirection = normalize(lightDir);
-    vec3 halfVector = normalize(lightDirection + eyeDir);
+    vec3 halfVector = normalize(lightDir + eyeDir);
+    // vec3 reflection = lightDir - 2 * (lightDir*normal)*normal;
 
     // ambient
     vec4 ambient = ka * diffuseColor;
 
     // diffuse
-    float diffuseFactor = max(dot(normal, lightDirection), 0.0F);
+    float diffuseFactor = max(dot(normal, lightDir), 0.0F);
     vec4 diffuse = kd * diffuseFactor * diffuseColor * lightColor;
 
     // specular

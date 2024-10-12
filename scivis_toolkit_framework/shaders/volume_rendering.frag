@@ -115,43 +115,41 @@ bool intersectBoundingBox(vec3 rayOrig, vec3 rayDir, out float tNear, out float 
 vec3 gradientCentral(vec3 pos)
 {
     vec3 final;
-    float width = voxelWidth;
     //computes difference between position + voxelwidth and position - voxelwidth
-    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - sampleVolume(pos - vec3(width, 0, 0));
-    final[1] = sampleVolume(pos + vec3(0, width, 0)) - sampleVolume(pos - vec3(0, width, 0));
-    final[2] = sampleVolume(pos + vec3(0, 0, width)) - sampleVolume(pos - vec3(0, 0, width));
-    return final / width;
+    final[0] = sampleVolume(pos + vec3(voxelWidth, 0, 0)) - sampleVolume(pos - vec3(voxelWidth, 0, 0));
+    final[1] = sampleVolume(pos + vec3(0, voxelWidth, 0)) - sampleVolume(pos - vec3(0, voxelWidth, 0));
+    final[2] = sampleVolume(pos + vec3(0, 0, voxelWidth)) - sampleVolume(pos - vec3(0, 0, voxelWidth));
+    return final / (2*voxelWidth);
 }
 
 vec3 gradientIntermediate(vec3 pos)
 {
     vec3 final;
-    float width = voxelWidth;
-    float Sample = sampleVolume(pos);
-    final[0] = sampleVolume(pos + vec3(width, 0, 0)) - Sample;
-    final[1] = sampleVolume(pos + vec3(0, width, 0)) - Sample;
-    final[2] = sampleVolume(pos + vec3(0, 0, width)) - Sample;
-    return final / width;
+    final[0] = sampleVolume(pos + vec3(voxelWidth, 0, 0)) - sampleVolume(pos);
+    final[1] = sampleVolume(pos + vec3(0, voxelWidth, 0)) - sampleVolume(pos);
+    final[2] = sampleVolume(pos + vec3(0, 0, voxelWidth)) - sampleVolume(pos);
+    return final / voxelWidth;
 }
 
-//this is the part of the code that I do NOT understand
+// Implementing the Blinn-Phong shading model component by component
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
-    vec3 N = normalize(normal);
-    vec3 L = normalize(lightDir);
-    vec3 H = normalize(L + eyeDir);
+    vec3 halfVector = normalize(lightDir + eyeDir);
+    // vec3 reflection = lightDir - 2 * (lightDir*normal)*normal;
 
+    // ambient
     vec4 ambient = ka * diffuseColor;
 
-    float diffuseFactor = max(dot(N, L), 0.0F);
+    // diffuse
+    float diffuseFactor = max(dot(normal, lightDir), 0.0F);
     vec4 diffuse = kd * diffuseFactor * diffuseColor * lightColor;
 
-    float specularFactor = pow(max(dot(N, H), 0.0F), exponent);
+    // specular
+    float specularFactor = pow(max(dot(normal, halfVector), 0.0F), exponent);
     vec4 specular = ks * specularFactor * specularColor;
 
     vec4 result = ambient + diffuse + specular;
     result.a = diffuseColor.a;
-
     return result;
 }
 
@@ -191,6 +189,7 @@ void accumulation(float value, float opacityCorrectionFactor, inout vec4 compose
     //re-written function for color compositing from lecture with the variables of this file
     composedColor.rgb = composedColor.rgb + (1.0 - composedColor.a) * color.rgb * color.a;
     composedColor.a = composedColor.a + (1.0 - composedColor.a) * color.a;
+
 }
 
 /**
@@ -302,11 +301,11 @@ void mainImage(out vec4 fragColor)
 
         // Compute gradient and apply lighting
         #ifdef USE_INTERMEDIATE
-        vec3 grad = gradientIntermediate(pos);
+        //vec3 grad = gradientIntermediate(pos);
         #elif defined(USE_CENTRAL)
-        vec3 grad = gradientCentral(pos);
+        //vec3 grad = gradientCentral(pos);
         #endif
-        vec4 lightingColor = lighting(color, -normalize(grad), -rayDir);
+        //vec4 lightingColor = lighting(color, -normalize(grad), -rayDir);
 
         //I cannot FOR THE LIFE OF ME figure out how to integrate lighting along the ray
         //this is what I came put with so far but it makes the screen black for some reason

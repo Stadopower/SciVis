@@ -9,6 +9,8 @@ uniform sampler3D textureSampler;
 
 out vec4 color;
 
+int timestep = 1;
+
 // Color map for the time steps
 const vec3 colorTimeStep0 = vec3(0.19483F, 0.08339F, 0.26149F);
 const vec3 colorTimeStep1 = vec3(0.276877F, 0.467233F, 0.938261F);
@@ -58,6 +60,7 @@ const vec3 colorNode2 = vec3(1.0F, 0.0F, 0.0F);  // red
  */
 float sampleVolume(vec3 texCoord)
 {
+
     return texture(textureSampler, texCoord).r;
 }
 
@@ -122,14 +125,27 @@ float opacityCorrection(float alpha, float samplingRatio)
  * @param opacityCorrectionFactor The ratio between current sampling rate and the original one.
  * @param composedColor The blended color (both input and output).
  */
+
 void accumulation(float value, float opacityCorrectionFactor, inout vec4 composedColor)
 {
     vec4 color = transferFunction(value);
     color.a = opacityCorrection(color.a, opacityCorrectionFactor);
 
-    // TODO: Implement Front-to-back blending
-    composedColor = vec4(0.5) * value; // placeholder
+    //re-written function for color compositing from lecture with the variables of this file
+    composedColor.rgb = composedColor.rgb + (1.0 - composedColor.a) * color.rgb * color.a;
+    composedColor.a = composedColor.a + (1.0 - composedColor.a) * color.a;
+
 }
+
+void accumulation1(float value, float opacityCorrectionFactor, inout vec4 composedColor, vec3 timestepColor) {
+    vec4 sampleColor = transferFunction(value);
+    sampleColor.a = opacityCorrection(sampleColor.a, opacityCorrectionFactor);
+
+    // Blend with the current timestep color
+    composedColor.rgb += (1.0 - composedColor.a) * timestepColor * sampleColor.a;
+    composedColor.a += (1.0 - composedColor.a) * sampleColor.a;
+}
+
 
 /**
  * Main Function: Computes the color for the given fragment.
@@ -182,23 +198,42 @@ void mainImage(out vec4 fragColor)
     float opacityCorrectionFactor = 1.0F / (float(sampleNum) * voxelWidth);
 
     /******************** main raycasting loop *******************/
-    float t = tNear;
-    int i = 0;
-    while(t < tFar && i < sampleNum)
-    {
-        vec3 pos = camPos + t * rayDir;
-        // Use normalized volume coordinate
-        vec3 texCoord = pos + 0.5F;
-        float value = sampleVolume(texCoord);
 
-        accumulation(value, opacityCorrectionFactor, finalColor);
+    for (int j = 0; j < 8; j++) { // Iterate over time steps
+            float t = tNear;
+            int i = 0;
 
-        t += rayStepSize;
-    }
+            while (t < tFar && i < sampleNum) {
+                vec3 pos = camPos + t * rayDir;
+                vec3 texCoord = pos + 0.5F;
 
-    fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
-    fragColor.a = 1.0F;
+                texCoord = texCoord * 0.5F;
+
+                // check which square we are in
+                if (j == 1) texCoord += vec3(0.5, 0.0, 0.0);
+                else if (j == 2) texCoord += vec3(0.0, 0.0, 0.5);
+                else if (j == 3) texCoord += vec3(0.5, 0.0, 0.5);
+                else if (j == 4) texCoord += vec3(0.0, 0.5, 0.0);
+                else if (j == 5) texCoord += vec3(0.5, 0.5, 0.0);
+                else if (j == 6) texCoord += vec3(0.0, 0.5, 0.5);
+                else if (j == 7) texCoord += vec3(0.5, 0.5, 0.5);
+
+
+                float value = sampleVolume(texCoord);
+                // This would be the color + opacity to use
+                vec4 temp_color = vec4(colorsTimeStep[j], value);
+                // Accumulate the sample into the final color
+                accumulation1(value, opacityCorrectionFactor, finalColor,colorsTimeStep[j] ); // So this works but im not sure if it is the correct solution and i can also not really explain it.
+
+                t += rayStepSize;
+            }
+        }
+
+        // Mix final color with background based on opacity
+        fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
+        fragColor.a = 1.0F;
 }
+
 
 void main()
 {
