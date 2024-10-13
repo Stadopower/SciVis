@@ -223,7 +223,7 @@ void mainImage(out vec4 fragColor)
                 // This would be the color + opacity to use
                 vec4 temp_color = vec4(colorsTimeStep[j], value);
                 // Accumulate the sample into the final color
-                accumulation1(value, opacityCorrectionFactor, finalColor,colorsTimeStep[j] ); // So this works but im not sure if it is the correct solution and i can also not really explain it.
+                accumulation1(value, opacityCorrectionFactor, finalColor, colorsTimeStep[j]); // So this works but im not sure if it is the correct solution and i can also not really explain it.
 
                 t += rayStepSize;
             }
