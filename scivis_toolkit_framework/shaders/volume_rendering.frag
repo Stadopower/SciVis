@@ -1,7 +1,7 @@
 #version 330 core
 // volumen_rendering fragment shader
 
-#define USE_INTERMEDIATE
+#define USE_CENTRAL
 
 in vec2 uv;
 
@@ -223,15 +223,9 @@ void sumIntensity(float value, inout float sumIntense, inout int hitCount)
  */
 void mainImage(out vec4 fragColor)
 {
-    // show the lookup table
-//    fragColor = texture(lookupTable, uv);
-//    return;
-
     float aspect = iResolution.x / iResolution.y;
 
     /******************** compute camera parameters ********************/
-
-    // camera movement
     float camSpeed = 0.5F;
     vec3 camPos = 1.5F * vec3(cos(iTime * camSpeed), 0.5F, sin(iTime * camSpeed));
     vec3 camDir = -normalize(camPos);
@@ -267,73 +261,45 @@ void mainImage(out vec4 fragColor)
 
     float rayStepSize = (bbMax.x - bbMin.x) / float(sampleNum);
     vec4 finalColor = vec4(0.0F);
-    vec3 finalGradient = vec3(0.0F);
-    // ratio between current sampling rate vs. the original sampling rate
     float opacityCorrectionFactor = 1.0F / (float(sampleNum) * voxelWidth);
-    /******************** main raycasting loop *******************/
-
-    // For maximum intensity composition
-    float maxIntense = 0.0F;
-
-    // For average intensity composition
-    float sumIntense = 0.0F;
-    int hitCount = 0;
 
     float t = tNear;
     int i = 0;
-    while(t < tFar && i < sampleNum)
+
+    while (t < tFar && i < sampleNum)
     {
         vec3 pos = camPos + t * rayDir;
-        // Use normalized volume coordinate
         vec3 texCoord = pos + 0.5F;
         float value = sampleVolume(texCoord);
 
-        if (technique == 0){
-            accumulation(value, opacityCorrectionFactor, finalColor);
-        }else if (technique == 1){
-            maximumIntensity(value, maxIntense);
-        }else if (technique == 2){
-            sumIntensity(value, sumIntense, hitCount);
-        }else{
-            accumulation(value, opacityCorrectionFactor, finalColor);
-        }
-        t += rayStepSize;
+        // Apply transfer function to get base color and opacity
+        vec4 sampleColor = transferFunction(value);
+        sampleColor.a = opacityCorrection(sampleColor.a, opacityCorrectionFactor);
 
-        // Compute gradient and apply lighting
+        // Compute the gradient at the current position (for lighting)
         #ifdef USE_INTERMEDIATE
-        //vec3 grad = gradientIntermediate(pos);
+        vec3 grad = gradientIntermediate(texCoord);
         #elif defined(USE_CENTRAL)
-        //vec3 grad = gradientCentral(pos);
+        vec3 grad = gradientCentral(texCoord);
         #endif
-        //vec4 lightingColor = lighting(color, -normalize(grad), -rayDir);
 
-        //I cannot FOR THE LIFE OF ME figure out how to integrate lighting along the ray
-        //this is what I came put with so far but it makes the screen black for some reason
+        // Ensure the gradient is normalized to avoid distortions in lighting
+        vec3 normal = normalize(grad);
 
-        //finalColor.rgb *=  finalColor.a;
-        //finalColor.a += finalColor.a * lightingColor.a;
+        // Apply Blinn-Phong lighting model based on the gradient (surface normal) and ray direction
+        vec4 lightingColor = lighting(sampleColor, -normal, -rayDir);
+
+        // Accumulate the lighting color with the existing color along the ray
+        finalColor.rgb += (1.0F - finalColor.a) * lightingColor.rgb * sampleColor.a;
+        finalColor.a += (1.0F - finalColor.a) * sampleColor.a;
+
+        t += rayStepSize;
+        i++;
     }
 
-    //Determine final color:
-    if (technique == 0)
-    {   //we linearly interpolate the background and final color reached by the value of the final color
-        fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
-        fragColor.a = 1; //standard opacity of 1
-    }
-    else if (technique == 1)
-    {
-        fragColor = transferFunction(maxIntense);
-    }
-    else if (technique == 2)
-        {
-        if(hitCount == 0){
-            fragColor = background;
-        }else{
-            float average = sumIntense / float(hitCount);
-            fragColor = transferFunction(average);
-        }
-    }
-    fragColor = fragColor * fragColor.a + (1.0F - fragColor.a) * background;
+    // Final color blending with the background
+    fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
+    fragColor.a = 1.0F;
 }
 
 void main()
