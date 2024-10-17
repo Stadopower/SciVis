@@ -204,6 +204,44 @@ void Visualization::drawGlyphs()
      */
     modelTransformationMatrices = std::vector<float>(numberOfInstances * 16U, 0.0F); // Remove this placeholder initialization
 
+    // Loop through each glyph to calculate the transformation matrix
+    for (size_t i = 0; i < numberOfInstances; ++i)
+    {
+        // Calculate the position of the glyph on the grid.
+        size_t xIndex = i % m_numberOfGlyphsX;
+        size_t yIndex = i / m_numberOfGlyphsX;
+
+        float xPosition = xIndex * m_cellWidth + m_cellWidth - 1.0F;  // Offset by (m_cellWidth - 1.0F)
+        float yPosition = yIndex * m_cellHeight + m_cellHeight - 1.0F; // Offset by (m_cellHeight - 1.0F)
+        qDebug() << xPosition;
+
+        // Create a QMatrix4x4 and start with the identity matrix
+        QMatrix4x4 modelMatrix;
+        modelMatrix.setToIdentity();
+
+        // Apply translation to move the glyph to its grid position
+        modelMatrix.translate(xPosition, yPosition);
+
+        // Calculate the rotation angle from the direction vector (in radians)
+        float angle = qAtan2(vectorDirectionY[i], vectorDirectionX[i]);
+
+        // Apply rotation around the Z-axis (2D rotation)
+        modelMatrix.rotate(qRadiansToDegrees(angle), 0.0F, 0.0F, 1.0F); // Convert angle to degrees since QMatrix4x4.rotate uses degrees
+
+        // Apply scaling based on the magnitude of the vector
+        modelMatrix.scale(vectorMagnitude[i], vectorMagnitude[i], 1.0F); // Scaling on X and Y only
+
+        // Copy the 4x4 matrix into the 1D vector in column-major order
+        const float *matrixData = modelMatrix.constData();
+
+        // QMatrix4x4 stores data in row-major order. OpenGL expects column-major, so we need to transpose it.
+        for (int col = 0; col < 4; ++col) {
+            for (int row = 0; row < 4; ++row) {
+                modelTransformationMatrices[i * 16U + col * 4 + row] = matrixData[row * 4 + col];
+            }
+        }
+    }
+
     // Buffering section starts here.
     glBindVertexArray(m_vaoGlyphs);
 
