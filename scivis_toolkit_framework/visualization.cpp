@@ -314,15 +314,9 @@ void Visualization::applyGaussianBlur(std::vector<float> &scalarValues) const
 #include <vector>
 #include <cmath>
 
-#include <vector>
-#include <cmath>
-
-#include <vector>
-#include <cmath>
-
 void Visualization::applyGradients(std::vector<float> &scalarValues) const
 {
-    // Sobel kernels
+    // sobel kernels
     std::vector<std::vector<int>> kx = {{1, 0, -1},
                                         {2, 0, -2},
                                         {1, 0, -1}};
@@ -331,7 +325,7 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
                                         {0, 0, 0},
                                         {-1, -2, -1}};
 
-    // Step 1: Mirror the kernels
+    // first we mirror the kernels
     std::vector<std::vector<int>> mirror_kx(3, std::vector<int>(3));
     std::vector<std::vector<int>> mirror_ky(3, std::vector<int>(3));
 
@@ -342,25 +336,28 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
         }
     }
 
-    // Step 2: Initialize gradient and magnitude vectors
+    // create empty vectors to store the gradients in x and y
     std::vector<float> scalarX(scalarValues.size(), 0);
     std::vector<float> scalarY(scalarValues.size(), 0);
     std::vector<float> magnitudes(scalarValues.size(), 0);
 
     int size = 64; // size of the grid
 
-
     // loop over each pixel
     for (int i = 0; i < scalarValues.size(); ++i) {
         int x = i % size;        // column
         int y = i / size;        // row
 
-        // this handles boundary conditions in case we have to wrap around
+        // this handles boundary conditions in case we have to wrap around the image
+        //each integer variable determines the pixel to your left,right,above and below
+        //so if you are at x=0 then it goes to 63 for example, otherwise stores x-1
+
         int x_left = (x == 0) ? size - 1 : x - 1;
         int x_right = (x == size - 1) ? 0 : x + 1;
         int y_top = (y == 0) ? size - 1 : y - 1;
         int y_bottom = (y == size - 1) ? 0 : y + 1;
 
+        //create a temporary vector to store the matrix values around the pixel
         std::vector<std::vector<float>> tempVec = {
             {scalarValues[y_top * size + x_left], scalarValues[y_top * size + x], scalarValues[y_top * size + x_right]},
             {scalarValues[y * size + x_left], scalarValues[i], scalarValues[y * size + x_right]},
@@ -370,12 +367,14 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
         // apply convolution
         for (int m = 0; m < 3; ++m) {
             for (int n = 0; n < 3; ++n) {
-                scalarX[i] += mirror_kx[m][n] * tempVec[m][n];  // Convolution for x-gradient
-                scalarY[i] += mirror_ky[m][n] * tempVec[m][n];  // Convolution for y-gradient
+                scalarX[i] += mirror_kx[m][n] * tempVec[m][n];
+                scalarY[i] += mirror_ky[m][n] * tempVec[m][n];
             }
         }
+        //formula to calculate the magnitude
         magnitudes[i] = std::sqrt(pow(scalarX[i],2) + pow(scalarY[i],2));
     }
+    //store the magnitude to the scalarValues to visualize it
     scalarValues = magnitudes;
 }
 

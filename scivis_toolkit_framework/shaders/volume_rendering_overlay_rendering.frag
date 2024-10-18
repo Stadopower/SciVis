@@ -137,11 +137,12 @@ void accumulation(float value, float opacityCorrectionFactor, inout vec4 compose
 
 }
 
+//extra accumulation function
 void accumulation1(float value, float opacityCorrectionFactor, inout vec4 composedColor, vec3 timestepColor) {
     vec4 sampleColor = transferFunction(value);
     sampleColor.a = opacityCorrection(sampleColor.a, opacityCorrectionFactor);
 
-    // Blend with the current timestep color
+    // works with current timestep color
     composedColor.rgb += (1.0 - composedColor.a) * timestepColor * sampleColor.a;
     composedColor.a += (1.0 - composedColor.a) * sampleColor.a;
 }
@@ -223,7 +224,7 @@ void mainImage(out vec4 fragColor)
                 // This would be the color + opacity to use
                 vec4 temp_color = vec4(colorsTimeStep[j], value);
                 // Accumulate the sample into the final color
-                // This now basically does the same as the accumulation function but in here. Might be easier to expalain what we are doing. Maybe we can find the forumlar somewhere for mulitple colors or smth.
+                // This now basically does the same as the accumulation function but in here
                 vec4 sample_color = transferFunction(value);
                 sample_color.a = opacityCorrection(sample_color.a, opacityCorrectionFactor);
 
@@ -235,7 +236,7 @@ void mainImage(out vec4 fragColor)
             }
         }
 
-        // Mix final color with background based on opacity
+        // mixing final color with background based on opacity factor
         fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
         fragColor.a = 1.0F;
 }

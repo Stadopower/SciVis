@@ -188,7 +188,6 @@ vec3 gradientIntermediate(vec3 pos)
 }
 
 // Blinn-Phong
-//FOR TIM, I have no idea how this works honestly, it looks like it does ( and it should) but don't ask me how
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
     vec3 halfVector = normalize(lightDir + eyeDir);
@@ -290,11 +289,13 @@ void mainImage(out vec4 fragColor)
         {
            finalGradient = grad;
         }
+        //apply lighting function to the color along the ray
         color = lighting(color, -normalize(finalGradient), -rayDir);
 
         color.rgb *= color.a;
         finalColor += color * (1.0F - finalColor.w);
     }
+    //calculate the final color
     fragColor = finalColor * finalColor.a + (1.0F - finalColor.a) * background;
 }
 

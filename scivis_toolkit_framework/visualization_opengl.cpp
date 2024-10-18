@@ -197,21 +197,22 @@ void Visualization::opengl_setupIsolines()
     glVertexAttribPointer(1U, 1, GL_FLOAT, GL_FALSE, 0U, reinterpret_cast<GLvoid*>(0));
 
     // should be power(m_dim-1,2)x4
-    m_numberOfIsolinesIndices = pow(m_DIM-1,2)*4; // Placeholder value. Set this to the length of the index list.
+    m_numberOfIsolinesIndices = pow(m_DIM-1,2)*4;
 
     std::vector<unsigned short> indices;
     indices.reserve(m_numberOfIsolinesIndices);
 
     // Replace the placeholder code below with code that, for each quad in the grid, computes its
     // four indices and adds it to the indices vector.
-    for(int i=0; i<m_DIM*m_DIM-m_DIM; i++){ //We loop till the last row as this is also never an starting index
+
+    for(int i=0; i<m_DIM*m_DIM-m_DIM; i++){ //We loop till the last row as this is also never a starting index
         if(i%m_DIM == m_DIM-1){ // Right edge is never the start of a new square
             continue;
         }
         indices.push_back(i);
-        indices.push_back(i+1);
-        indices.push_back(i+m_DIM);
-        indices.push_back(i+m_DIM+1);
+        indices.push_back(i+1); //right
+        indices.push_back(i+m_DIM); // above
+        indices.push_back(i+m_DIM+1); // above and right
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_eboIsolines);
