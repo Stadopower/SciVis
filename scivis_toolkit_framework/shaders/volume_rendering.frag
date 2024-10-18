@@ -170,7 +170,7 @@ float opacityCorrection(float alpha, float samplingRatio)
 }
 
 // Choose technique
-const int technique = 0; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
+const int technique = 1; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
 
 
 /**

@@ -209,15 +209,15 @@ void Visualization::drawGlyphs()
     {
         // Calculate the position of the glyph on the grid.
         size_t xIndex = i % m_numberOfGlyphsX;
-        size_t yIndex = i / m_numberOfGlyphsX;
+        size_t yIndex = i / m_numberOfGlyphsY;
 
         float xPosition = xIndex * m_cellWidth + m_cellWidth - 1.0F;  // Offset by (m_cellWidth - 1.0F)
         float yPosition = yIndex * m_cellHeight + m_cellHeight - 1.0F; // Offset by (m_cellHeight - 1.0F)
-        qDebug() << xPosition;
+        //qDebug() << xPosition;
 
         // Create a QMatrix4x4 and start with the identity matrix
         QMatrix4x4 modelMatrix;
-        modelMatrix.setToIdentity();
+        //modelMatrix.setToIdentity();
 
         // Apply translation to move the glyph to its grid position
         modelMatrix.translate(xPosition, yPosition);
