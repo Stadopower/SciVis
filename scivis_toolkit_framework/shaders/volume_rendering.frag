@@ -283,7 +283,7 @@ void mainImage(out vec4 fragColor)
             maximumIntensity(value, maxIntense);
         else if (technique == 2)
             sumIntensity(value, sumIntense, hitCount);
-        else{
+        else{ // Task 5, compositing and lighting
             // Apply transfer function to get base color and opacity
             vec4 sampleColor = transferFunction(value);
             sampleColor.a = opacityCorrection(sampleColor.a, opacityCorrectionFactor);
