@@ -204,40 +204,28 @@ void Visualization::drawGlyphs()
      */
     modelTransformationMatrices = std::vector<float>(numberOfInstances * 16U, 0.0F); // Remove this placeholder initialization
 
-    // Loop through each glyph to calculate the transformation matrix
-    for (size_t i = 0; i < numberOfInstances; ++i)
-    {
-        // Calculate the position of the glyph on the grid.
-        size_t xIndex = i % m_numberOfGlyphsX;
-        size_t yIndex = i / m_numberOfGlyphsY;
+    // What is this exactly?
+    float x_spacing = (2.0f - 2*m_cellWidth)/(m_numberOfGlyphsX-1);
+    float y_spacing = (2.0f - 2*m_cellHeight)/(m_numberOfGlyphsY-1);
 
-        float xPosition = xIndex * m_cellWidth + m_cellWidth - 1.0F;  // Offset by (m_cellWidth - 1.0F)
-        float yPosition = yIndex * m_cellHeight + m_cellHeight - 1.0F; // Offset by (m_cellHeight - 1.0F)
-        //qDebug() << xPosition;
+    // We loop through all the glyphs needed to be placed in y and x direction, calculate the index y*m_glyph is the row, +x to get the column.
+    for(size_t y = 0; y<m_numberOfGlyphsY; y++){
+        for(size_t x=0; x<m_numberOfGlyphsX;x++){
+            size_t i = y * m_numberOfGlyphsX + x;
 
-        // Create a QMatrix4x4 and start with the identity matrix
-        QMatrix4x4 modelMatrix;
-        //modelMatrix.setToIdentity();
+            float posX = -1.0f + m_cellWidth + x * x_spacing;
+            float posY = -1.0f + m_cellHeight + y * y_spacing;
+            float rotation = (std::atan2(vectorDirectionY[i], vectorDirectionX[i])-M_PI_2)*(180.0f/M_PI); // first calculated the rotation angle and converts it into degrees. -pi/2 because the standard rotation is up
 
-        // Apply translation to move the glyph to its grid position
-        modelMatrix.translate(xPosition, yPosition);
+            float scale = vectorMagnitude[i]*0.05f;
 
-        // Calculate the rotation angle from the direction vector (in radians)
-        float angle = qAtan2(vectorDirectionY[i], vectorDirectionX[i]);
+            QMatrix4x4 matrix;
+            matrix.translate(posX, posY);
+            matrix.rotate(rotation, 0, 0, 1);
+            matrix.scale(scale);
 
-        // Apply rotation around the Z-axis (2D rotation)
-        modelMatrix.rotate(qRadiansToDegrees(angle), 0.0F, 0.0F, 1.0F); // Convert angle to degrees since QMatrix4x4.rotate uses degrees
-
-        // Apply scaling based on the magnitude of the vector
-        modelMatrix.scale(vectorMagnitude[i], vectorMagnitude[i], 1.0F); // Scaling on X and Y only
-
-        // Copy the 4x4 matrix into the 1D vector in column-major order
-        const float *matrixData = modelMatrix.constData();
-
-        // QMatrix4x4 stores data in row-major order. OpenGL expects column-major, so we need to transpose it.
-        for (int col = 0; col < 4; ++col) {
-            for (int row = 0; row < 4; ++row) {
-                modelTransformationMatrices[i * 16U + col * 4 + row] = matrixData[row * 4 + col];
+            for(int j=0; j<16;j++){
+                modelTransformationMatrices[i*16+j] = matrix.constData()[j];
             }
         }
     }

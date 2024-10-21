@@ -21,39 +21,39 @@ namespace interpolation
 {
     std::vector<float> interpolatedValues(yMax * xMax, 0.0f); // Initialize output vector with 0
 
-    float x_ratio = static_cast<float>(sideSize - 1) / (xMax - 1);
-    float y_ratio = static_cast<float>(sideSize - 1) / (yMax - 1);
+    float x_spacing = (sideSize - 1) / (xMax - 1);
+    float y_spacing = (sideSize - 1) / (yMax - 1);
 
-    for (size_t j = 0; j < yMax; ++j)
+    for (size_t y = 0; y < yMax; y++)
     {
-        for (size_t i = 0; i < xMax; ++i)
+        for (size_t x = 0; x < xMax; x++)
         {
             // Map the position in the output grid to the input grid
-            float src_x = i * x_ratio;
-            float src_y = j * y_ratio;
+            float posX = x * x_spacing;
+            float posY = y * y_spacing;
 
-            // Get the integer and fractional parts
-            size_t x1 = static_cast<size_t>(src_x);
-            size_t y1 = static_cast<size_t>(src_y);
-            size_t x2 = std::min(x1 + 1, sideSize - 1);
-            size_t y2 = std::min(y1 + 1, sideSize - 1);
+            // Calculate the X and Y positions in int form of the cube
+            size_t x0 = std::floor(posX);
+            size_t y0 = std::floor(posY);
+            // Taking into account that x0+1 can step outside the coordinate system so we take sideSize-1 if that should happen
+            size_t x1 = std::min(x0 + 1, sideSize - 1);
+            size_t y1 = std::min(y0 + 1, sideSize - 1);
 
-            float x_diff = src_x - x1;
-            float y_diff = src_y - y1;
+            float x_diff = posX - x0;
+            float y_diff = posY - y0;
 
-            // Get the values at the four corners
-            float Q11 = values[y1 * sideSize + x1];
-            float Q21 = values[y1 * sideSize + x2];
-            float Q12 = values[y2 * sideSize + x1];
-            float Q22 = values[y2 * sideSize + x2];
+            // values at the corners
+            float f00 = values[y0 * sideSize + x0];
+            float f10 = values[y0 * sideSize + x1];
+            float f01 = values[y1 * sideSize + x0];
+            float f11 = values[y1 * sideSize + x1];
 
-            // Perform bilinear interpolation
-            float R1 = (1 - x_diff) * Q11 + x_diff * Q21; // Interpolation in the x-direction (top row)
-            float R2 = (1 - x_diff) * Q12 + x_diff * Q22; // Interpolation in the x-direction (bottom row)
-            float P = (1 - y_diff) * R1 + y_diff * R2;    // Interpolation in the y-direction
+            // interpolate along the X axis on the bottom and top row
+            float r0 = (1 - x_diff) * f00 + x_diff * f10;
+            float r1 = (1 - x_diff) * f01 + x_diff * f11;
 
-            // Assign the interpolated value to the output
-            interpolatedValues[j * xMax + i] = P;
+            // interpolate along the y direction given the above calculated values
+            interpolatedValues[y * xMax + x] = (1 - y_diff) * r0 + y_diff * r1;
         }
     }
 
