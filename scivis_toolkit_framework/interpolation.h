@@ -19,20 +19,22 @@ namespace interpolation
     template <typename inVector>
     std::vector<float> interpolateSquareVector(inVector const &values, size_t const sideSize, size_t const xMax, size_t const yMax)
 {
-    std::vector<float> interpolatedValues(yMax * xMax, 0.0f); // Initialize output vector with 0
+    std::vector<float> interpolatedValues(yMax * xMax);
 
+    // Calculation the correct spacing to find our where we need to interpolate
     float x_spacing = (sideSize - 1) / (xMax - 1);
     float y_spacing = (sideSize - 1) / (yMax - 1);
 
+    // Loop over the disired y and x dimensions. To find all the positions we are going to place glyphs in.
     for (size_t y = 0; y < yMax; y++)
     {
         for (size_t x = 0; x < xMax; x++)
         {
-            // Map the position in the output grid to the input grid
+            // Calculate the current x and y positions
             float posX = x * x_spacing;
             float posY = y * y_spacing;
 
-            // Calculate the X and Y positions in int form of the cube
+            // x0 is the column position and y0 the row of the bottom right corner
             size_t x0 = std::floor(posX);
             size_t y0 = std::floor(posY);
             // Taking into account that x0+1 can step outside the coordinate system so we take sideSize-1 if that should happen
@@ -43,8 +45,10 @@ namespace interpolation
             float y_diff = posY - y0;
 
             // values at the corners
+            // bottom row
             float f00 = values[y0 * sideSize + x0];
             float f10 = values[y0 * sideSize + x1];
+            // top row
             float f01 = values[y1 * sideSize + x0];
             float f11 = values[y1 * sideSize + x1];
 

@@ -9,9 +9,9 @@ uniform float stepSize;        // Δt, step size for Euler integration
 in vec2 texCoordinates;  // Fragment's texture coordinates
 out vec4 color;          // Final color output
 
-vec2 inkfield1 = vec2(1/3 , 2/3);   // add (1/4, 0, 0) to color
-vec2 inkfield2 = vec2(2/3, 2/3);    // add(0, 1/4, 0) to color
-vec2 inkfield3 = vec2(1/2, 1/3);    // add(0, 0, 1/4) to color
+vec2 inkfield1 = vec2(0.33 , 0.66);   // add (1/4, 0, 0) to color
+vec2 inkfield2 = vec2(0.66, 0.66);    // add(0, 1/4, 0) to color
+vec2 inkfield3 = vec2(0.5, 0.33);    // add(0, 0, 1/4) to color
 float radius = 0.01;
 // function to detect if we are in the inkfield or not
 bool inInk(vec2 pos, vec2 inkPos)
@@ -25,7 +25,7 @@ void main()
     float noiseValue;
     float magnitude;
     float intensity = 0.0;
-    vec3 inkColor = vec3(0.0, 0.0, 0.0);
+    vec3 ink = vec3(0.0, 0.0, 0.0);
     // The overall sum of the weights
     float kernelWeightSum = (streamlineLength + 1) * (streamlineLength + 1); // same as (L+1) squared
 
@@ -43,13 +43,14 @@ void main()
         magnitude = length(velocity);
         noiseValue = texture(noiseTexture, tempCoords).r;   // noise at current position
         intensity += magnitude * noiseValue * weight;       // accumulating the intensity
+
         // Check if we are in an inkfield
         if(inInk(tempCoords, inkfield1)){
-            inkColor += vec3(1/4,0,0);
+            ink += vec3(0.25,0,0);
         }if(inInk(tempCoords, inkfield2)){
-            inkColor += vec3(0,1/4,0);
+            ink += vec3(0,0.25,0);
         }if(inInk(tempCoords, inkfield3)){
-            inkColor += vec3(0,0,1/4);
+            ink += vec3(0,0,0.25);
         }
 
         // stepping one direction forward
@@ -68,17 +69,9 @@ void main()
         magnitude = length(velocity);
         noiseValue = texture(noiseTexture, tempCoords).r;   // noise at current position
         intensity += magnitude * noiseValue * weight;       // accumulating the intensity
-
-        if(inInk(tempCoords, inkfield1)){
-            inkColor += vec3(1/4,0,0);
-        }if(inInk(tempCoords, inkfield2)){
-            inkColor += vec3(0,1/4,0);
-        }if(inInk(tempCoords, inkfield3)){
-            inkColor += vec3(0,0,1/4);
-        }
         // stepping one direction forward
         tempCoords -= velocity * stepSize;
     }
-    // Returning the final greyscale color
-    color = vec4(vec3(intensity)+inkColor, 1.0);
+    // Returning final color, greyscale plus ink, if we pass through a field
+    color = vec4(vec3(intensity)+ink,1.0);
 }

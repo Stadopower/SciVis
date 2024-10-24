@@ -204,7 +204,7 @@ void Visualization::drawGlyphs()
      */
     modelTransformationMatrices = std::vector<float>(numberOfInstances * 16U, 0.0F); // Remove this placeholder initialization
 
-    // What is this exactly?
+    // Calculating the stesize
     float x_spacing = (2.0f - 2*m_cellWidth)/(m_numberOfGlyphsX-1);
     float y_spacing = (2.0f - 2*m_cellHeight)/(m_numberOfGlyphsY-1);
 
@@ -213,11 +213,14 @@ void Visualization::drawGlyphs()
         for(size_t x=0; x<m_numberOfGlyphsX;x++){
             size_t i = y * m_numberOfGlyphsX + x;
 
-            float posX = -1.0f + m_cellWidth + x * x_spacing;
-            float posY = -1.0f + m_cellHeight + y * y_spacing;
-            float rotation = (std::atan2(vectorDirectionY[i], vectorDirectionX[i])-M_PI_2)*(180.0f/M_PI); // first calculated the rotation angle and converts it into degrees. -pi/2 because the standard rotation is up
+            // Getting the correct positions, offseting it by m_cellWidth - 1.0F, m_cellHeight - 1.0F
+            float posX =  m_cellWidth - 1.0f + x * x_spacing;
+            float posY = m_cellHeight - 1.0f + y * y_spacing;
+            // first calculated the rotation angle and converts it into degrees. (-pi/2 because the standard rotation is up)
+            float rotation = (std::atan2(vectorDirectionY[i], vectorDirectionX[i])-M_PI_2)*(180.0f/M_PI);
 
-            float scale = vectorMagnitude[i]*0.05f;
+            // Scaling the vector based on the magnitude, 0.08 was chosen as a constant scaling parameter as otherwise the glyphs are way too big.
+            float scale = vectorMagnitude[i]*0.08f;
 
             QMatrix4x4 matrix;
             matrix.translate(posX, posY);

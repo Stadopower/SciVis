@@ -137,16 +137,6 @@ void accumulation(float value, float opacityCorrectionFactor, inout vec4 compose
 
 }
 
-//extra accumulation function
-void accumulation1(float value, float opacityCorrectionFactor, inout vec4 composedColor, vec3 timestepColor) {
-    vec4 sampleColor = transferFunction(value);
-    sampleColor.a = opacityCorrection(sampleColor.a, opacityCorrectionFactor);
-
-    // works with current timestep color
-    composedColor.rgb += (1.0 - composedColor.a) * timestepColor * sampleColor.a;
-    composedColor.a += (1.0 - composedColor.a) * sampleColor.a;
-}
-
 
 /**
  * Main Function: Computes the color for the given fragment.
@@ -230,7 +220,6 @@ void mainImage(out vec4 fragColor)
 
                 finalColor.rgb += (1.0 - finalColor.a) * temp_color.rgb * sample_color.a;
                 finalColor.a += (1.0 - finalColor.a) * sample_color.a;
-                //accumulation1(value, opacityCorrectionFactor, finalColor, colorsTimeStep[j]); // So this works but im not sure if it is the correct solution and i can also not really explain it.
 
                 t += rayStepSize;
             }
