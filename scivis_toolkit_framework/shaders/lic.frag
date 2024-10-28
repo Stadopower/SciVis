@@ -27,7 +27,7 @@ void main()
     float intensity = 0.0;
     vec3 ink = vec3(0.0, 0.0, 0.0);
     // The overall sum of the weights
-    float kernelWeightSum = (streamlineLength + 1) * (streamlineLength + 1); // same as (L+1) squared
+    float kernelWeightSum = (streamlineLength + 1) * (streamlineLength + 1); // same as (L+1) squared, I think
 
 
     // forward trace

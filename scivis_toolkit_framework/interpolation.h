@@ -21,23 +21,23 @@ namespace interpolation
 {
     std::vector<float> interpolatedValues(yMax * xMax);
 
-    // Calculation the correct spacing to find our where we need to interpolate
+    // find the correct spacing to figure out where we need to interpolate
     float x_spacing = (sideSize - 1) / (xMax - 1);
     float y_spacing = (sideSize - 1) / (yMax - 1);
 
-    // Loop over the disired y and x dimensions. To find all the positions we are going to place glyphs in.
+    // Loop over y and x dimensions to find all the positions we are going to place glyphs in
     for (size_t y = 0; y < yMax; y++)
     {
         for (size_t x = 0; x < xMax; x++)
         {
-            // Calculate the current x and y positions
+            // calculate the current x and y positions
             float posX = x * x_spacing;
             float posY = y * y_spacing;
 
             // x0 is the column position and y0 the row of the bottom right corner
             size_t x0 = std::floor(posX);
             size_t y0 = std::floor(posY);
-            // Taking into account that x0+1 can step outside the coordinate system so we take sideSize-1 if that should happen
+            // Taking into account that x0+1 can step outside the coordinate system; we take sideSize-1 if that should happen
             size_t x1 = std::min(x0 + 1, sideSize - 1);
             size_t y1 = std::min(y0 + 1, sideSize - 1);
 

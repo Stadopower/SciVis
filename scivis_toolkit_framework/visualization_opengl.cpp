@@ -196,7 +196,6 @@ void Visualization::opengl_setupIsolines()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1U, 1, GL_FLOAT, GL_FALSE, 0U, reinterpret_cast<GLvoid*>(0));
 
-    // should be power(m_dim-1,2)x4
     m_numberOfIsolinesIndices = pow(m_DIM-1,2)*4;
 
     std::vector<unsigned short> indices;

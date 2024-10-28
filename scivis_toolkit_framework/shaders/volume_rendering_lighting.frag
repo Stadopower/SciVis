@@ -173,7 +173,8 @@ vec3 gradientCentral(vec3 pos)
     final[0] = sampleVolume(pos + vec3(voxelWidth, 0, 0)) - sampleVolume(pos - vec3(voxelWidth, 0, 0));
     final[1] = sampleVolume(pos + vec3(0, voxelWidth, 0)) - sampleVolume(pos - vec3(0, voxelWidth, 0));
     final[2] = sampleVolume(pos + vec3(0, 0, voxelWidth)) - sampleVolume(pos - vec3(0, 0, voxelWidth));
-    return final / voxelWidth;
+    //divide by 2 as we took the width of 2 voxelwidths
+    return final / 2*voxelWidth;
 }
 
 // Compute gradient using intermediate differences
@@ -273,7 +274,6 @@ void mainImage(out vec4 fragColor)
         float sampleValue = sampleVolume(pos);
         vec4 color = transferFunction(sampleValue);
 
-        //this was already here aswell
         #ifdef USE_INTERMEDIATE
         vec3 grad = gradientIntermediate(pos);
         #else

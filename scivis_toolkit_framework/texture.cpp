@@ -30,7 +30,7 @@ std::vector<Color> Texture::createTurboTexture(size_t const numberOfColors)
     std::vector<Color> newTurboColorMap{};      // Probably some nicer way of doing it
     int stepSize = floor(fullTurboColorMap.size()/(numberOfColors)); // would not work if numberOfColors is bigger than 256
     float t = fullTurboColorMap.size() % (numberOfColors);
-    // numberOfCo,lors cannot be smaller than 2, not a good colormap when stepsize is 1 as it takes colors close together and not from the beginning and end
+    // numberOfColors cannot be smaller than 2, not a good colormap when stepsize is 1 as it takes colors close together and not from the beginning and end
     for(int i = 0; i <numberOfColors; i++){
         if(t != 0){
             newTurboColorMap.push_back({(fullTurboColorMap[i*stepSize].r+ t * ((fullTurboColorMap[i*stepSize+1].r) - fullTurboColorMap[i*stepSize].r)),

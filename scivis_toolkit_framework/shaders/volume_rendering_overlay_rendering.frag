@@ -214,6 +214,7 @@ void mainImage(out vec4 fragColor)
                 // This would be the color + opacity to use
                 vec4 temp_color = vec4(colorsTimeStep[j], value);
                 // Accumulate the sample into the final color
+
                 // This now basically does the same as the accumulation function but in here
                 vec4 sample_color = transferFunction(value);
                 sample_color.a = opacityCorrection(sample_color.a, opacityCorrectionFactor);

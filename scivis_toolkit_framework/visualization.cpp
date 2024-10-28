@@ -204,7 +204,7 @@ void Visualization::drawGlyphs()
      */
     modelTransformationMatrices = std::vector<float>(numberOfInstances * 16U, 0.0F); // Remove this placeholder initialization
 
-    // Calculating the stesize
+    // calculate the stesize
     float x_spacing = (2.0f - 2*m_cellWidth)/(m_numberOfGlyphsX-1);
     float y_spacing = (2.0f - 2*m_cellHeight)/(m_numberOfGlyphsY-1);
 
@@ -213,13 +213,13 @@ void Visualization::drawGlyphs()
         for(size_t x=0; x<m_numberOfGlyphsX;x++){
             size_t i = y * m_numberOfGlyphsX + x;
 
-            // Getting the correct positions, offseting it by m_cellWidth - 1.0F, m_cellHeight - 1.0F
+            // getting the correct positions, offseting it by m_cellWidth - 1.0F, m_cellHeight - 1.0F
             float posX =  m_cellWidth - 1.0f + x * x_spacing;
             float posY = m_cellHeight - 1.0f + y * y_spacing;
             // first calculated the rotation angle and converts it into degrees. (-pi/2 because the standard rotation is up)
             float rotation = (std::atan2(vectorDirectionY[i], vectorDirectionX[i])-M_PI_2)*(180.0f/M_PI);
 
-            // Scaling the vector based on the magnitude, 0.08 was chosen as a constant scaling parameter as otherwise the glyphs are way too big.
+            // scale the vector based on the magnitude, 0.08 was chosen as a constant scaling parameter as otherwise the glyphs are way too big
             float scale = vectorMagnitude[i]*0.08f;
 
             QMatrix4x4 matrix;
@@ -340,8 +340,8 @@ void Visualization::applyGradients(std::vector<float> &scalarValues) const
         int y = i / size;        // row
 
         // this handles boundary conditions in case we have to wrap around the image
-        //each integer variable determines the pixel to your left,right,above and below
-        //so if you are at x=0 then it goes to 63 for example, otherwise stores x-1
+        // each integer variable determines the pixel to your left,right,above and below
+        // so if you are at x=0 then it goes to 63 for example, otherwise stores x-1
 
         int x_left = (x == 0) ? size - 1 : x - 1;
         int x_right = (x == size - 1) ? 0 : x + 1;

@@ -15,7 +15,7 @@ void main()
     gl_Position = vertCoordinates_in;
 
     // Map values from [rangeMin, rangeMax] to [0, 1].
-    value = (value_in + rangeMin)/(rangeMax - rangeMin); // ch
+    value = (value_in + rangeMin)/(rangeMax - rangeMin);
 
     // Apply transfer function.
     value = pow(value, transferK);

@@ -18,7 +18,7 @@ void main()
     value = clamp(value_in, clampMin, clampMax);
 
     // Map the range [clampMin, clampMax] to [0, 1].
-    value = (value_in - clampMin)/(clampMax-clampMin); // changed formula
+    value = (value_in - clampMin)/(clampMax-clampMin);
 
     // Apply transfer function.
     value = pow(value, transferK);

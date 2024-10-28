@@ -119,6 +119,7 @@ vec3 gradientCentral(vec3 pos)
     final[0] = sampleVolume(pos + vec3(voxelWidth, 0, 0)) - sampleVolume(pos - vec3(voxelWidth, 0, 0));
     final[1] = sampleVolume(pos + vec3(0, voxelWidth, 0)) - sampleVolume(pos - vec3(0, voxelWidth, 0));
     final[2] = sampleVolume(pos + vec3(0, 0, voxelWidth)) - sampleVolume(pos - vec3(0, 0, voxelWidth));
+    //we divide by 2 as we take a width of 2 voxelwidths
     return final / (2*voxelWidth);
 }
 
@@ -131,7 +132,7 @@ vec3 gradientIntermediate(vec3 pos)
     return final / voxelWidth;
 }
 
-// Implementing the Blinn-Phong shading model component by component
+//Blinn-Phong model
 vec4 lighting(vec4 diffuseColor, vec3 normal, vec3 eyeDir)
 {
     vec3 halfVector = normalize(lightDir + eyeDir);
@@ -170,7 +171,7 @@ float opacityCorrection(float alpha, float samplingRatio)
 }
 
 // Choose technique
-const int technique = 3; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity
+const int technique = 2; // technique = 0: accumulation, 1: maximum intensity projection, 2: average intensity, any other number (e.g. 3) for accumulation+lighting
 
 
 /**
@@ -185,8 +186,7 @@ void accumulation(float value, float opacityCorrectionFactor, inout vec4 compose
     vec4 color = transferFunction(value);
     color.a = opacityCorrection(color.a, opacityCorrectionFactor);
 
-    //composedColor = vec4(0.5F) * value; // placeholder
-    //re-written function for color compositing from lecture with the variables of this file
+    //re-written function, from lecture, for color compositing with the variables of this file
     composedColor.rgb = composedColor.rgb + (1.0 - composedColor.a) * color.rgb * color.a;
     composedColor.a = composedColor.a + (1.0 - composedColor.a) * color.a;
 
@@ -284,24 +284,24 @@ void mainImage(out vec4 fragColor)
         else if (technique == 2)
             sumIntensity(value, sumIntense, hitCount);
         else{ // Task 5, compositing and lighting
-            // Apply transfer function to get base color and opacity
             vec4 sampleColor = transferFunction(value);
             sampleColor.a = opacityCorrection(sampleColor.a, opacityCorrectionFactor);
 
-            // Compute the gradient at the current position (for lighting)
+            // do gradient
             #ifdef USE_INTERMEDIATE
             vec3 grad = gradientIntermediate(texCoord);
             #elif defined(USE_CENTRAL)
             vec3 grad = gradientCentral(texCoord);
             #endif
 
-            // Ensure the gradient is normalized to avoid distortions in lighting
+            // normalize
             vec3 normal = normalize(grad);
 
-            // Apply Blinn-Phong lighting model based on the gradient (surface normal) and ray direction
+            // apply Blinn-Phong lighting model
             vec4 lightingColor = lighting(sampleColor, -normal, -rayDir);
 
-            // Accumulate the lighting color with the existing color along the ray
+            // accumulate along the ray
+            // for TA: we couldn't get it to work with the accumulation function without adding a 4th parameter, so we implemented it here :)
             finalColor.rgb += (1.0F - finalColor.a) * lightingColor.rgb * sampleColor.a;
             finalColor.a += (1.0F - finalColor.a) * sampleColor.a;
         }
@@ -311,10 +311,11 @@ void mainImage(out vec4 fragColor)
 
     if (technique == 0){
         fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
-        fragColor.a = 1; //start with a standard opacity of 1
+        fragColor.a = 1.0F;
+        fragColor = fragColor * fragColor.a + (1.0F - fragColor.a) * background;
     }else if(technique == 1){
         fragColor = transferFunction(maxIntense);
-        fragColor.a = 1.0;
+        fragColor = fragColor * fragColor.a + (1.0F - fragColor.a) * background;
     }else if(technique == 2){
         if(hitCount == 0){
             fragColor = background;
@@ -322,13 +323,11 @@ void mainImage(out vec4 fragColor)
             float average = sumIntense / float(hitCount);
             fragColor = transferFunction(average);
         }
-        fragColor.a = 1;
+        fragColor = fragColor * fragColor.a + (1.0F - fragColor.a) * background;
     }else{
-        // Final color blending with the background
+        // final color mix with baxkground
         fragColor.rgb = mix(background.rgb, finalColor.rgb, finalColor.a);
-        fragColor.a = 1.0F;
     }
-
 
 }
 
